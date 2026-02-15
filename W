@@ -1,0 +1,104 @@
+-- =========================
+-- CONFIG
+-- =========================
+local BRAINROT_THRESHOLD = 1_000_000 -- 1m+ để test
+local DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1472498140409102462/Ijb7ppZ8IZVFbTz2mSySRr3M9487k60ysmNZ2NFm8KlozX41BunCspHfA06Je-4N1WBm"
+
+local SCAN_TIME = 12        -- thời gian đứng mỗi server (giây)
+local HOP_DELAY = 2         -- delay trước khi hop
+
+-- =========================
+-- SERVICES
+-- =========================
+local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+
+local LocalPlayer = Players.LocalPlayer
+
+-- =========================
+-- STATE
+-- =========================
+local reportedPlayers = {}
+local scanning = true
+
+-- =========================
+-- DISCORD NOTIFIER
+-- =========================
+local function sendToDiscord(playerName, brainrotValue)
+    local data = {
+        content = "@everyone 🧪 **TEST NOTIFIER: BRAINROT 1M+ DETECTED**",
+        username = "Brainrot Notifier [TEST]",
+        allowed_mentions = { parse = { "everyone" } },
+        embeds = {{
+            title = "🧠 Brainrot Alert (1M+)",
+            color = 65280,
+            fields = {
+                { name = "👤 Player", value = playerName, inline = true },
+                { name = "🧮 Brainrot", value = tostring(brainrotValue), inline = true },
+                { name = "🖥 Server JobId", value = game.JobId, inline = false }
+            },
+            timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
+        }}
+    }
+
+    pcall(function()
+        HttpService:PostAsync(
+            DISCORD_WEBHOOK,
+            HttpService:JSONEncode(data),
+            Enum.HttpContentType.ApplicationJson
+        )
+    end)
+end
+
+-- =========================
+-- CHECK PLAYER
+-- =========================
+local function checkPlayer(player)
+    task.wait(3) -- đợi stats load
+
+    local leaderstats = player:FindFirstChild("leaderstats")
+    if not leaderstats then return end
+
+    local brainrot = leaderstats:FindFirstChild("Brainrot")
+    if not brainrot then return end
+
+    if brainrot.Value >= BRAINROT_THRESHOLD then
+        if not reportedPlayers[player.UserId] then
+            reportedPlayers[player.UserId] = true
+            sendToDiscord(player.Name, brainrot.Value)
+        end
+    end
+end
+
+-- =========================
+-- SCAN SERVER
+-- =========================
+local function scanServer()
+    for _, plr in ipairs(Players:GetPlayers()) do
+        task.spawn(checkPlayer, plr)
+    end
+end
+
+-- =========================
+-- SERVER HOP
+-- =========================
+local function hopServer()
+    task.wait(HOP_DELAY)
+    TeleportService:Teleport(game.PlaceId, LocalPlayer)
+end
+
+-- =========================
+-- MAIN LOOP
+-- =========================
+task.spawn(function()
+    scanServer()
+    task.wait(SCAN_TIME)
+    if scanning then
+        hopServer()
+    end
+end)
+
+Players.PlayerAdded:Connect(function(player)
+    checkPlayer(player)
+end)
