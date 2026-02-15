@@ -1,38 +1,79 @@
 -- LocalScript trong StarterPlayerScripts hoặc StarterGui
 
--- Lấy PlayerGui
+-- ================== UI SETUP ==================
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
+local TweenService = game:GetService("TweenService")
 
--- Tạo ScreenGui
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "FullScreenOverlay"
 screenGui.Parent = playerGui
 
--- Tạo Frame đen phủ kín màn hình
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(1, 0, 1, 0) -- phủ kín màn hình
-frame.Position = UDim2.new(0, 0, 0, 0)
-frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- màu đen
+frame.Size = UDim2.new(1,0,1,0)
+frame.Position = UDim2.new(0,0,0,0)
+frame.BackgroundColor3 = Color3.fromRGB(0,0,0)
 frame.BorderSizePixel = 0
 frame.Parent = screenGui
 
--- Tạo TextLabel ở giữa
+-- Gradient
+local gradient = Instance.new("UIGradient")
+gradient.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(10,10,10)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(25,25,25))
+}
+gradient.Parent = frame
+
+-- Icon
+local icon = Instance.new("TextLabel")
+icon.Size = UDim2.new(0,100,0,100)
+icon.Position = UDim2.new(0.5,-50,0.4,-80)
+icon.BackgroundTransparency = 1
+icon.Text = "🧠"
+icon.TextScaled = true
+icon.Parent = frame
+
+-- Main text
 local textLabel = Instance.new("TextLabel")
-textLabel.Size = UDim2.new(0, 400, 0, 100) -- kích thước chữ
-textLabel.Position = UDim2.new(0.5, -200, 0.5, -50) -- căn giữa
+textLabel.Size = UDim2.new(0,500,0,80)
+textLabel.Position = UDim2.new(0.5,-250,0.5,-40)
 textLabel.BackgroundTransparency = 1
 textLabel.Text = "Normal Working ✅"
-textLabel.TextColor3 = Color3.fromRGB(255, 255, 255) -- màu trắng
+textLabel.TextColor3 = Color3.fromRGB(255,255,255)
 textLabel.Font = Enum.Font.SourceSansBold
-textLabel.TextScaled = true -- chữ tự động scale
+textLabel.TextScaled = true
 textLabel.Parent = frame
 
+-- Time label
+local timeLabel = Instance.new("TextLabel")
+timeLabel.Size = UDim2.new(0,400,0,40)
+timeLabel.Position = UDim2.new(0.5,-200,0.55,60)
+timeLabel.BackgroundTransparency = 1
+timeLabel.TextColor3 = Color3.fromRGB(180,180,180)
+timeLabel.Font = Enum.Font.SourceSans
+timeLabel.TextScaled = true
+timeLabel.Parent = frame
+
+frame.BackgroundTransparency = 1
+TweenService:Create(
+	frame,
+	TweenInfo.new(0.6, Enum.EasingStyle.Quad),
+	{BackgroundTransparency = 0}
+):Play()
+
+task.spawn(function()
+	while task.wait(1) do
+		timeLabel.Text = "⏰ "..os.date("%H:%M:%S | %d/%m/%Y")
+	end
+end)
+
+-- ================== ANTI DOUBLE WEBHOOK ==================
 if shared.__BRAINROT_WEBHOOK_SENT then return end
 shared.__BRAINROT_WEBHOOK_SENT = true
--- ================== SETUP ==================
+
 repeat task.wait() until game:IsLoaded()
 
+-- ================== SERVICES ==================
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
@@ -43,7 +84,7 @@ local placeId = game.PlaceId
 
 -- ================== CONFIG ==================
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1472498140409102462/Ijb7ppZ8IZVFbTz2mSySRr3M9487k60ysmNZ2NFm8KlozX41BunCspHfA06Je-4N1WBm"
-local PRICE_LIMIT = 1_000_000
+local PRICE_LIMIT = 5_000_000
 local MAX_DISTANCE = 5
 
 -- ================== DEBUG ==================
@@ -69,43 +110,29 @@ local function getInstanceWorldPos(inst)
 		return inst.Position
 	end
 	if inst:IsA("Model") then
-		if inst.PrimaryPart then
-			return inst.PrimaryPart.Position
-		else
-			return inst:GetPivot().Position
-		end
+		return inst.PrimaryPart and inst.PrimaryPart.Position or inst:GetPivot().Position
 	end
 end
 
--- ================== GET BASE NAME ==================
+-- ================== BASE NAME ==================
 local function getBaseNameFromPlot(plot)
 	local sign =
 		plot:FindFirstChild("PlotSign")
 		and plot.PlotSign:FindFirstChild("SurfaceGui")
 		and plot.PlotSign.SurfaceGui:FindFirstChild("Frame")
 		and plot.PlotSign.SurfaceGui.Frame:FindFirstChild("TextLabel")
-
-	if sign then
-		return sign.Text
-	end
-	return "Unknown Base"
+	return sign and sign.Text or "Unknown Base"
 end
 
--- ================== COLLECT BRAINROT ==================
+-- ================== COLLECT ==================
 local function collectBrainrot()
 	local found = {}
 	local plots = Workspace:FindFirstChild("Plots")
 	local debrisFolder = Workspace:FindFirstChild("Debris")
-
-	if not plots or not debrisFolder then
-		debugPrint("❌ Missing Plots or Debris")
-		return found
-	end
+	if not plots or not debrisFolder then return found end
 
 	for _, plot in ipairs(plots:GetChildren()) do
-		debugPrint("🔎 Scanning plot:", plot.Name)
 		local baseName = getBaseNameFromPlot(plot)
-
 		local podiums = plot:FindFirstChild("AnimalPodiums")
 		if not podiums then continue end
 
@@ -114,24 +141,21 @@ local function collectBrainrot()
 				podium:FindFirstChild("Base")
 				and podium.Base:FindFirstChild("Spawn")
 				and podium.Base.Spawn:FindFirstChild("Attachment")
-
 			if not att then continue end
-			local attPos = att.WorldPosition
 
 			local nearest, nearestDist
-
 			for _, debris in ipairs(debrisFolder:GetChildren()) do
 				local overhead = debris:FindFirstChild("AnimalOverhead")
 				if not overhead then continue end
 
 				local nameLabel = overhead:FindFirstChild("DisplayName")
-				local genLabel  = overhead:FindFirstChild("Generation")
+				local genLabel = overhead:FindFirstChild("Generation")
 				if not nameLabel or not genLabel then continue end
 
-				local debrisPos = getInstanceWorldPos(debris)
-				if not debrisPos then continue end
+				local pos = getInstanceWorldPos(debris)
+				if not pos then continue end
 
-				local dist = (debrisPos - attPos).Magnitude
+				local dist = (pos - att.WorldPosition).Magnitude
 				if dist <= MAX_DISTANCE and (not nearestDist or dist < nearestDist) then
 					nearestDist = dist
 					nearest = {
@@ -143,174 +167,78 @@ local function collectBrainrot()
 				end
 			end
 
-			if nearest then
-				debugPrint(
-					"[MATCH]",
-					nearest.name,
-					nearest.genText,
-					"=>",
-					nearest.genValue,
-					"| Base:",
-					nearest.baseName
-				)
-
-				if nearest.genValue >= PRICE_LIMIT then
-					table.insert(
-						found,
-						string.format(
-							"%s (%s) | %s",
-							nearest.name,
-							nearest.genText,
-							nearest.baseName
-						)
+			if nearest and nearest.genValue >= PRICE_LIMIT then
+				table.insert(found,
+					string.format("%s (%s) | %s",
+						nearest.name,
+						nearest.genText,
+						nearest.baseName
 					)
-				end
+				)
 			end
 		end
 	end
-
 	return found
 end
 
--- ================== WEBHOOK ==================
+-- ================== WEBHOOK (NO THUMBNAIL / NO DESCRIPTION) ==================
 local function sendWebhook(loot)
-	if #loot == 0 then
-		debugPrint("❌ No valid brainrot")
-		return
-	end
+	if #loot == 0 then return end
 
 	local serverLink = ("https://kebabman.vercel.app/start?placeId=%s&gameInstanceId=%s")
 		:format(placeId, tostring(game.JobId))
 
 	local payload = {
-		content = "@everyone **BRAINROT FOUND!!!!**",
+		content = "@everyone 🚨 **BRAINROT FOUND** 🚨",
 		embeds = {{
-			title = "🧠 Brainrot Finder",
-			color = 16711680,
+			title = "🧠 Brainrot Finder Alert",
+			color = 0xFF0000,
+			timestamp = DateTime.now():ToIsoDate(),
 			fields = {
-				{ name = "Players", value = string.format("%d/8", #Players:GetPlayers()) }, 
-				{ name = "Loot", value = table.concat(loot, "\n") },
-				{ name = "Join Server", value = ("[Click Here](%s)"):format(serverLink) }
+				{
+					name = "👥 Players",
+					value = string.format("`%d / 8`", #Players:GetPlayers()),
+					inline = true
+				},
+				{
+					name = "🌍 Place ID",
+					value = tostring(placeId),
+					inline = true
+				},
+				{
+					name = "🧠 Loot",
+					value = "```"..table.concat(loot, "\n").."```",
+					inline = false
+				},
+				{
+					name = "🔗 Join Server",
+					value = ("[CLICK HERE](%s)"):format(serverLink),
+					inline = false
+				}
+			},
+			footer = {
+				text = "Brainrot Auto Finder • "..os.date("%H:%M:%S %d/%m/%Y")
 			}
 		}}
 	}
 
 	local req = (syn and syn.request) or http_request or (http and http.request) or request
 	if req then
-		debugPrint("📤 Sending webhook")
 		req({
 			Url = WEBHOOK_URL,
 			Method = "POST",
-			Headers = { ["Content-Type"] = "application/json" },
+			Headers = {["Content-Type"] = "application/json"},
 			Body = HttpService:JSONEncode(payload)
 		})
 	end
 end
 
 -- ================== MAIN ==================
-debugPrint("🚀 Finder started")
-
 local loot = collectBrainrot()
 
--- Cập nhật textLabel dựa vào loot
 if #loot == 0 then
-    textLabel.Text = "No Brainrot Found 😞"
+	textLabel.Text = "No Brainrot Found 😞"
 else
-    textLabel.Text = "Webhook Sent ✅"
-    sendWebhook(loot) -- chỉ gửi webhook nếu có loot
-end
-
--- LocalScript
-local Players = game:GetService("Players")
-local HttpService = game:GetService("HttpService")
-local TeleportService = game:GetService("TeleportService")
-
-local PlaceId = game.PlaceId
-local JobId = game.JobId
-
--- Table lưu server đã ghé
-local visitedServers = {}
-
--- Hàm server hop
-local function serverHop()
-    local servers = {}
-    local success, req = pcall(function()
-        return game:HttpGet("https://games.roblox.com/v1/games/" .. PlaceId .. "/servers/Public?sortOrder=Desc&limit=100&excludeFullGames=true")
-    end)
-
-    if success then
-        local body = HttpService:JSONDecode(req)
-        if body and body.data then
-            for i, v in next, body.data do
-                if type(v) == "table" 
-                   and tonumber(v.playing) and tonumber(v.maxPlayers) 
-                   and v.playing < v.maxPlayers 
-                   and v.id ~= JobId 
-                   and not table.find(visitedServers, v.id) then
-                    table.insert(servers, v.id)
-                end
-            end
-        end
-    end
-
-    if #servers > 0 then
-        local chosenServer = servers[math.random(1, #servers)]
-        table.insert(visitedServers, chosenServer) -- đánh dấu server đã ghé
-
-        -- Queue script cho server tiếp theo
-        local code = [[
-            local Players = game:GetService("Players")
-            local HttpService = game:GetService("HttpService")
-            local TeleportService = game:GetService("TeleportService")
-            local PlaceId = game.PlaceId
-            local JobId = game.JobId
-            local visitedServers = ]] .. HttpService:JSONEncode(visitedServers) .. [[
-
-            local function serverHop()
-                local servers = {}
-                local success, req = pcall(function()
-                    return game:HttpGet("https://games.roblox.com/v1/games/"..PlaceId.."/servers/Public?sortOrder=Desc&limit=100&excludeFullGames=true")
-                end)
-                if success then
-                    local body = HttpService:JSONDecode(req)
-                    if body and body.data then
-                        for i,v in next, body.data do
-                            if type(v)=="table" and tonumber(v.playing) and tonumber(v.maxPlayers)
-                               and v.playing < v.maxPlayers
-                               and v.id ~= JobId
-                               and not table.find(visitedServers,v.id) then
-                                table.insert(servers,v.id)
-                            end
-                        end
-                    end
-                end
-
-                if #servers > 0 then
-                    local chosenServer = servers[math.random(1,#servers)]
-                    table.insert(visitedServers,chosenServer)
-                    queue_on_teleport = code -- tự queue tiếp
-                    TeleportService:TeleportToPlaceInstance(PlaceId, chosenServer, Players.LocalPlayer)
-                else
-                    warn("Không còn server nào để hop.")
-                end
-            end
-
-            while true do
-                serverHop()
-                wait(1)
-            end
-        ]]
-        queue_on_teleport = code
-
-        -- Teleport
-        TeleportService:TeleportToPlaceInstance(PlaceId, chosenServer, Players.LocalPlayer)
-    else
-        warn("Không còn server nào để hop.")
-    end
-end
-
--- Gọi server hop lần đầu
-while true do
-    serverHop()
-    wait(1)
+	textLabel.Text = "Webhook Sent ✅"
+	sendWebhook(loot)
 end
