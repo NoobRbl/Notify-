@@ -43,7 +43,7 @@ local placeId = game.PlaceId
 
 -- ================== CONFIG ==================
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1472498140409102462/Ijb7ppZ8IZVFbTz2mSySRr3M9487k60ysmNZ2NFm8KlozX41BunCspHfA06Je-4N1WBm"
-local PRICE_LIMIT = 5_000_000
+local PRICE_LIMIT = 1_000_000
 local MAX_DISTANCE = 5
 
 -- ================== DEBUG ==================
