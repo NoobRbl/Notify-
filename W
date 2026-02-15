@@ -1,316 +1,487 @@
 -- LocalScript trong StarterPlayerScripts hoặc StarterGui
 
--- Lấy PlayerGui
+-- ================== UI SETUP ==================
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Tạo ScreenGui
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "FullScreenOverlay"
+screenGui.Name = "BrainrotOverlay"
+screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
--- Tạo Frame đen phủ kín màn hình
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(1, 0, 1, 0) -- phủ kín màn hình
-frame.Position = UDim2.new(0, 0, 0, 0)
-frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- màu đen
-frame.BorderSizePixel = 0
-frame.Parent = screenGui
+-- Background Frame
+local bgFrame = Instance.new("Frame")
+bgFrame.Size = UDim2.new(1, 0, 1, 0)
+bgFrame.Position = UDim2.new(0, 0, 0, 0)
+bgFrame.BackgroundColor3 = Color3.fromRGB(8, 8, 12)
+bgFrame.BorderSizePixel = 0
+bgFrame.Parent = screenGui
 
--- Tạo TextLabel ở giữa
-local textLabel = Instance.new("TextLabel")
-textLabel.Size = UDim2.new(0, 400, 0, 100) -- kích thước chữ
-textLabel.Position = UDim2.new(0.5, -200, 0.5, -50) -- căn giữa
-textLabel.BackgroundTransparency = 1
-textLabel.Text = "Normal Working ✅"
-textLabel.TextColor3 = Color3.fromRGB(255, 255, 255) -- màu trắng
-textLabel.Font = Enum.Font.SourceSansBold
-textLabel.TextScaled = true -- chữ tự động scale
-textLabel.Parent = frame
+-- Gradient nền
+local bgGrad = Instance.new("UIGradient")
+bgGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(10, 5, 20)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(3, 3, 10))
+})
+bgGrad.Rotation = 135
+bgGrad.Parent = bgFrame
 
+-- Card chính
+local card = Instance.new("Frame")
+card.Size = UDim2.new(0, 420, 0, 220)
+card.Position = UDim2.new(0.5, -210, 0.5, -110)
+card.BackgroundColor3 = Color3.fromRGB(18, 18, 28)
+card.BorderSizePixel = 0
+card.Parent = bgFrame
+
+local cardCorner = Instance.new("UICorner")
+cardCorner.CornerRadius = UDim.new(0, 16)
+cardCorner.Parent = card
+
+local cardStroke = Instance.new("UIStroke")
+cardStroke.Color = Color3.fromRGB(120, 60, 220)
+cardStroke.Thickness = 2
+cardStroke.Transparency = 0.3
+cardStroke.Parent = card
+
+-- Top accent bar
+local accentBar = Instance.new("Frame")
+accentBar.Size = UDim2.new(1, 0, 0, 4)
+accentBar.Position = UDim2.new(0, 0, 0, 0)
+accentBar.BackgroundColor3 = Color3.fromRGB(150, 80, 255)
+accentBar.BorderSizePixel = 0
+accentBar.Parent = card
+
+local accentGrad = Instance.new("UIGradient")
+accentGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(100, 40, 255)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(200, 100, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 80, 180))
+})
+accentGrad.Parent = accentBar
+
+local accentCorner = Instance.new("UICorner")
+accentCorner.CornerRadius = UDim.new(0, 4)
+accentCorner.Parent = accentBar
+
+-- Icon + Title
+local titleRow = Instance.new("Frame")
+titleRow.Size = UDim2.new(1, -30, 0, 40)
+titleRow.Position = UDim2.new(0, 15, 0, 18)
+titleRow.BackgroundTransparency = 1
+titleRow.Parent = card
+
+local iconLabel = Instance.new("TextLabel")
+iconLabel.Size = UDim2.new(0, 36, 0, 36)
+iconLabel.Position = UDim2.new(0, 0, 0, 0)
+iconLabel.BackgroundTransparency = 1
+iconLabel.Text = "🧠"
+iconLabel.TextScaled = true
+iconLabel.Parent = titleRow
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, -46, 1, 0)
+titleLabel.Position = UDim2.new(0, 46, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "Brainrot Finder"
+titleLabel.TextColor3 = Color3.fromRGB(220, 200, 255)
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextScaled = true
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.Parent = titleRow
+
+-- Divider
+local divider = Instance.new("Frame")
+divider.Size = UDim2.new(1, -30, 0, 1)
+divider.Position = UDim2.new(0, 15, 0, 65)
+divider.BackgroundColor3 = Color3.fromRGB(60, 50, 90)
+divider.BorderSizePixel = 0
+divider.Parent = card
+
+-- Status label
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Size = UDim2.new(1, -30, 0, 36)
+statusLabel.Position = UDim2.new(0, 15, 0, 76)
+statusLabel.BackgroundTransparency = 1
+statusLabel.Text = "⏳ Initializing..."
+statusLabel.TextColor3 = Color3.fromRGB(180, 160, 220)
+statusLabel.Font = Enum.Font.GothamSemibold
+statusLabel.TextScaled = true
+statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+statusLabel.Parent = card
+
+-- Server info label
+local serverLabel = Instance.new("TextLabel")
+serverLabel.Size = UDim2.new(1, -30, 0, 26)
+serverLabel.Position = UDim2.new(0, 15, 0, 118)
+serverLabel.BackgroundTransparency = 1
+serverLabel.Text = ""
+serverLabel.TextColor3 = Color3.fromRGB(130, 120, 160)
+serverLabel.Font = Enum.Font.Gotham
+serverLabel.TextScaled = true
+serverLabel.TextXAlignment = Enum.TextXAlignment.Left
+serverLabel.Parent = card
+
+-- Hop counter label
+local hopLabel = Instance.new("TextLabel")
+hopLabel.Size = UDim2.new(1, -30, 0, 26)
+hopLabel.Position = UDim2.new(0, 15, 0, 150)
+hopLabel.BackgroundTransparency = 1
+hopLabel.Text = "🔁 Servers hopped: 0"
+hopLabel.TextColor3 = Color3.fromRGB(130, 120, 160)
+hopLabel.Font = Enum.Font.Gotham
+hopLabel.TextScaled = true
+hopLabel.TextXAlignment = Enum.TextXAlignment.Left
+hopLabel.Parent = card
+
+-- Progress bar bg
+local progressBg = Instance.new("Frame")
+progressBg.Size = UDim2.new(1, -30, 0, 8)
+progressBg.Position = UDim2.new(0, 15, 0, 186)
+progressBg.BackgroundColor3 = Color3.fromRGB(35, 30, 55)
+progressBg.BorderSizePixel = 0
+progressBg.Parent = card
+Instance.new("UICorner", progressBg).CornerRadius = UDim.new(0, 4)
+
+local progressBar = Instance.new("Frame")
+progressBar.Size = UDim2.new(0, 0, 1, 0)
+progressBar.BackgroundColor3 = Color3.fromRGB(150, 80, 255)
+progressBar.BorderSizePixel = 0
+progressBar.Parent = progressBg
+Instance.new("UICorner", progressBar).CornerRadius = UDim.new(0, 4)
+
+local progressGrad = Instance.new("UIGradient")
+progressGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(100, 40, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 80, 180))
+})
+progressGrad.Parent = progressBar
+
+-- Pulse animation cho card stroke
+task.spawn(function()
+    local t = 0
+    while true do
+        t += 0.05
+        cardStroke.Transparency = 0.3 + math.sin(t) * 0.25
+        task.wait(0.05)
+    end
+end)
+
+-- Hàm cập nhật UI
+local function setStatus(icon, msg, color)
+    statusLabel.Text = icon .. " " .. msg
+    statusLabel.TextColor3 = color or Color3.fromRGB(180, 160, 220)
+end
+
+local function setProgress(pct) -- 0.0 -> 1.0
+    progressBar:TweenSize(UDim2.new(pct, 0, 1, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3, true)
+end
+
+-- ================== GUARD ==================
 if shared.__BRAINROT_WEBHOOK_SENT then return end
 shared.__BRAINROT_WEBHOOK_SENT = true
--- ================== SETUP ==================
+
 repeat task.wait() until game:IsLoaded()
 
-local Players = game:GetService("Players")
+-- ================== SERVICES ==================
+local Players        = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
-local HttpService = game:GetService("HttpService")
-local Workspace = game:GetService("Workspace")
+local HttpService    = game:GetService("HttpService")
+local Workspace      = game:GetService("Workspace")
+local TweenService   = game:GetService("TweenService")
 
-local player = Players.LocalPlayer
 local placeId = game.PlaceId
+local jobId   = game.JobId
 
 -- ================== CONFIG ==================
-local WEBHOOK_URL = "https://discord.com/api/webhooks/1458661734041522178/iQud8T27bN4dC515O6NEQ51SkKz8gv8R__B-g5GnmJAt1idjnX9Kct7DRiOD0FItojUW"
-local PRICE_LIMIT = 5_000_000
+local WEBHOOK_URL  = "https://discord.com/api/webhooks/1472498140409102462/Ijb7ppZ8IZVFbTz2mSySRr3M9487k60ysmNZ2NFm8KlozX41BunCspHfA06Je-4N1WBm"
+local PRICE_LIMIT  = 5_000_000
 local MAX_DISTANCE = 5
 
--- ================== DEBUG ==================
-local function debugPrint(...)
-	print("[BRAINROT FINDER]", ...)
-end
+-- ================== HELPERS ==================
+local function debugPrint(...) print("[BRAINROT]", ...) end
 
--- ================== PARSE GENERATION ==================
 local function parseGeneration(text)
-	if not text then return 0 end
-	local num = tonumber(text:match("[%d%.]+")) or 0
-	if text:find("K") then
-		num *= 1e3
-	elseif text:find("M") then
-		num *= 1e6
-	end
-	return num
+    if not text then return 0 end
+    local num = tonumber(text:match("[%d%.]+")) or 0
+    if text:find("K") then num *= 1e3
+    elseif text:find("M") then num *= 1e6 end
+    return num
 end
 
--- ================== WORLD POSITION ==================
 local function getInstanceWorldPos(inst)
-	if inst:IsA("BasePart") then
-		return inst.Position
-	end
-	if inst:IsA("Model") then
-		if inst.PrimaryPart then
-			return inst.PrimaryPart.Position
-		else
-			return inst:GetPivot().Position
-		end
-	end
+    if inst:IsA("BasePart") then return inst.Position end
+    if inst:IsA("Model") then
+        return inst.PrimaryPart and inst.PrimaryPart.Position or inst:GetPivot().Position
+    end
 end
 
--- ================== GET BASE NAME ==================
 local function getBaseNameFromPlot(plot)
-	local sign =
-		plot:FindFirstChild("PlotSign")
-		and plot.PlotSign:FindFirstChild("SurfaceGui")
-		and plot.PlotSign.SurfaceGui:FindFirstChild("Frame")
-		and plot.PlotSign.SurfaceGui.Frame:FindFirstChild("TextLabel")
-
-	if sign then
-		return sign.Text
-	end
-	return "Unknown Base"
+    local sign = plot:FindFirstChild("PlotSign")
+        and plot.PlotSign:FindFirstChild("SurfaceGui")
+        and plot.PlotSign.SurfaceGui:FindFirstChild("Frame")
+        and plot.PlotSign.SurfaceGui.Frame:FindFirstChild("TextLabel")
+    return sign and sign.Text or "Unknown Base"
 end
 
--- ================== COLLECT BRAINROT ==================
+-- ================== SCAN ==================
 local function collectBrainrot()
-	local found = {}
-	local plots = Workspace:FindFirstChild("Plots")
-	local debrisFolder = Workspace:FindFirstChild("Debris")
+    local found = {}
+    local plots       = Workspace:FindFirstChild("Plots")
+    local debrisFolder = Workspace:FindFirstChild("Debris")
+    if not plots or not debrisFolder then
+        debugPrint("❌ Missing Plots or Debris")
+        return found
+    end
 
-	if not plots or not debrisFolder then
-		debugPrint("❌ Missing Plots or Debris")
-		return found
-	end
+    local plotList = plots:GetChildren()
+    for idx, plot in ipairs(plotList) do
+        setProgress(idx / #plotList)
+        serverLabel.Text = "🔍 Scanning plot " .. idx .. "/" .. #plotList
+        debugPrint("Scanning plot:", plot.Name)
 
-	for _, plot in ipairs(plots:GetChildren()) do
-		debugPrint("🔎 Scanning plot:", plot.Name)
-		local baseName = getBaseNameFromPlot(plot)
+        local baseName = getBaseNameFromPlot(plot)
+        local podiums  = plot:FindFirstChild("AnimalPodiums")
+        if not podiums then continue end
 
-		local podiums = plot:FindFirstChild("AnimalPodiums")
-		if not podiums then continue end
+        for _, podium in ipairs(podiums:GetChildren()) do
+            local att = podium:FindFirstChild("Base")
+                and podium.Base:FindFirstChild("Spawn")
+                and podium.Base.Spawn:FindFirstChild("Attachment")
+            if not att then continue end
+            local attPos = att.WorldPosition
 
-		for _, podium in ipairs(podiums:GetChildren()) do
-			local att =
-				podium:FindFirstChild("Base")
-				and podium.Base:FindFirstChild("Spawn")
-				and podium.Base.Spawn:FindFirstChild("Attachment")
+            local nearest, nearestDist
+            for _, debris in ipairs(debrisFolder:GetChildren()) do
+                local overhead = debris:FindFirstChild("AnimalOverhead")
+                if not overhead then continue end
+                local nameLabel = overhead:FindFirstChild("DisplayName")
+                local genLabel  = overhead:FindFirstChild("Generation")
+                if not nameLabel or not genLabel then continue end
+                local debrisPos = getInstanceWorldPos(debris)
+                if not debrisPos then continue end
+                local dist = (debrisPos - attPos).Magnitude
+                if dist <= MAX_DISTANCE and (not nearestDist or dist < nearestDist) then
+                    nearestDist = dist
+                    nearest = {
+                        name     = nameLabel.Text,
+                        genText  = genLabel.Text,
+                        genValue = parseGeneration(genLabel.Text),
+                        baseName = baseName
+                    }
+                end
+            end
 
-			if not att then continue end
-			local attPos = att.WorldPosition
-
-			local nearest, nearestDist
-
-			for _, debris in ipairs(debrisFolder:GetChildren()) do
-				local overhead = debris:FindFirstChild("AnimalOverhead")
-				if not overhead then continue end
-
-				local nameLabel = overhead:FindFirstChild("DisplayName")
-				local genLabel  = overhead:FindFirstChild("Generation")
-				if not nameLabel or not genLabel then continue end
-
-				local debrisPos = getInstanceWorldPos(debris)
-				if not debrisPos then continue end
-
-				local dist = (debrisPos - attPos).Magnitude
-				if dist <= MAX_DISTANCE and (not nearestDist or dist < nearestDist) then
-					nearestDist = dist
-					nearest = {
-						name = nameLabel.Text,
-						genText = genLabel.Text,
-						genValue = parseGeneration(genLabel.Text),
-						baseName = baseName
-					}
-				end
-			end
-
-			if nearest then
-				debugPrint(
-					"[MATCH]",
-					nearest.name,
-					nearest.genText,
-					"=>",
-					nearest.genValue,
-					"| Base:",
-					nearest.baseName
-				)
-
-				if nearest.genValue >= PRICE_LIMIT then
-					table.insert(
-						found,
-						string.format(
-							"%s (%s) | %s",
-							nearest.name,
-							nearest.genText,
-							nearest.baseName
-						)
-					)
-				end
-			end
-		end
-	end
-
-	return found
+            if nearest and nearest.genValue >= PRICE_LIMIT then
+                debugPrint("[MATCH]", nearest.name, nearest.genText, "Base:", nearest.baseName)
+                table.insert(found, {
+                    name     = nearest.name,
+                    genText  = nearest.genText,
+                    genValue = nearest.genValue,
+                    baseName = nearest.baseName
+                })
+            end
+        end
+        task.wait()
+    end
+    return found
 end
 
 -- ================== WEBHOOK ==================
 local function sendWebhook(loot)
-	if #loot == 0 then
-		debugPrint("❌ No valid brainrot")
-		return
-	end
+    if #loot == 0 then debugPrint("No loot to send") return end
 
-	local serverLink = ("https://kebabman.vercel.app/start?placeId=%s&gameInstanceId=%s")
-		:format(placeId, tostring(game.JobId))
+    local serverLink = ("https://kebabman.vercel.app/start?placeId=%s&gameInstanceId=%s")
+        :format(placeId, tostring(jobId))
 
-	local payload = {
-		content = "@everyone **BRAINROT FOUND!!!!**",
-		embeds = {{
-			title = "🧠 Brainrot Finder",
-			color = 16711680,
-			fields = {
-				{ name = "Players", value = string.format("%d/8", #Players:GetPlayers()) }, 
-				{ name = "Loot", value = table.concat(loot, "\n") },
-				{ name = "Join Server", value = ("[Click Here](%s)"):format(serverLink) }
-			}
-		}}
-	}
+    -- Format loot list
+    local lootLines = {}
+    for _, item in ipairs(loot) do
+        table.insert(lootLines, string.format("🐾 **%s** `%s`\n└ 🏠 %s", item.name, item.genText, item.baseName))
+    end
+    local lootStr = table.concat(lootLines, "\n\n")
 
-	local req = (syn and syn.request) or http_request or (http and http.request) or request
-	if req then
-		debugPrint("📤 Sending webhook")
-		req({
-			Url = WEBHOOK_URL,
-			Method = "POST",
-			Headers = { ["Content-Type"] = "application/json" },
-			Body = HttpService:JSONEncode(payload)
-		})
-	end
+    -- Format player list
+    local playerNames = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        table.insert(playerNames, "• " .. p.Name)
+    end
+    local playerStr = table.concat(playerNames, "\n")
+    if playerStr == "" then playerStr = "N/A" end
+
+    local payload = {
+        content = "@everyone",
+        embeds = {{
+            title       = "🧠 Brainrot Detected!",
+            description = string.format(
+                "**%d** valuable brainrot found in this server!\n[🚀 Join Server](%s)",
+                #loot, serverLink
+            ),
+            color = 10027263, -- purple
+            fields = {
+                {
+                    name   = "💰 Loot (" .. #loot .. " found)",
+                    value  = lootStr,
+                    inline = false
+                },
+                {
+                    name   = "👥 Players Online",
+                    value  = playerStr,
+                    inline = true
+                },
+                {
+                    name   = "📊 Server Capacity",
+                    value  = string.format("%d / 8", #Players:GetPlayers()),
+                    inline = true
+                },
+                {
+                    name   = "🌐 Place ID",
+                    value  = tostring(placeId),
+                    inline = true
+                }
+            },
+            footer = {
+                text = "Brainrot Finder • Server: " .. tostring(jobId):sub(1, 18) .. "..."
+            },
+            timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
+        }}
+    }
+
+    local req = (syn and syn.request) or http_request or (http and http.request) or request
+    if req then
+        debugPrint("📤 Sending webhook")
+        pcall(function()
+            req({
+                Url     = WEBHOOK_URL,
+                Method  = "POST",
+                Headers = { ["Content-Type"] = "application/json" },
+                Body    = HttpService:JSONEncode(payload)
+            })
+        end)
+    end
 end
 
--- ================== MAIN ==================
-debugPrint("🚀 Finder started")
+-- ================== MAIN SCAN ==================
+setStatus("⏳", "Scanning server...", Color3.fromRGB(200, 180, 255))
+setProgress(0)
 
 local loot = collectBrainrot()
+setProgress(1)
 
--- Cập nhật textLabel dựa vào loot
 if #loot == 0 then
-    textLabel.Text = "No Brainrot Found 😞"
+    setStatus("😞", "No Brainrot Found", Color3.fromRGB(180, 100, 100))
+    serverLabel.Text = "Moving to next server..."
+    cardStroke.Color = Color3.fromRGB(180, 60, 60)
 else
-    textLabel.Text = "Webhook Sent ✅"
-    sendWebhook(loot) -- chỉ gửi webhook nếu có loot
+    setStatus("✅", "Webhook Sent! (" .. #loot .. " found)", Color3.fromRGB(100, 220, 140))
+    serverLabel.Text = "Found in this server!"
+    cardStroke.Color = Color3.fromRGB(80, 220, 120)
+    progressBar.BackgroundColor3 = Color3.fromRGB(80, 200, 120)
+    sendWebhook(loot)
 end
 
--- LocalScript
-local Players = game:GetService("Players")
-local HttpService = game:GetService("HttpService")
-local TeleportService = game:GetService("TeleportService")
+-- ================== SERVER HOP ==================
+-- Nhận danh sách đã hop từ lần trước (được truyền qua queue_on_teleport)
+local visitedServers = shared.__VISITED_SERVERS or {}
+table.insert(visitedServers, jobId) -- đánh dấu server hiện tại
+shared.__VISITED_SERVERS = visitedServers
 
-local PlaceId = game.PlaceId
-local JobId = game.JobId
+local hopCount = shared.__HOP_COUNT or 0
 
--- Table lưu server đã ghé
-local visitedServers = {}
+local function buildNextScript()
+    return string.format([[
+        shared.__VISITED_SERVERS = %s
+        shared.__HOP_COUNT = %d
+        -- Paste lại toàn bộ script ở đây hoặc loadstring từ URL nếu có remote loader
+    ]], HttpService:JSONEncode(visitedServers), hopCount + 1)
+end
 
--- Hàm server hop
 local function serverHop()
-    local servers = {}
-    local success, req = pcall(function()
-        return game:HttpGet("https://games.roblox.com/v1/games/" .. PlaceId .. "/servers/Public?sortOrder=Desc&limit=100&excludeFullGames=true")
+    hopCount += 1
+    shared.__HOP_COUNT = hopCount
+    hopLabel.Text = "🔁 Servers hopped: " .. hopCount
+    setStatus("🔁", "Server hopping...", Color3.fromRGB(150, 150, 220))
+
+    local ok, raw = pcall(function()
+        return game:HttpGet(
+            "https://games.roblox.com/v1/games/" .. placeId ..
+            "/servers/Public?sortOrder=Asc&limit=100&excludeFullGames=true"
+        )
     end)
 
-    if success then
-        local body = HttpService:JSONDecode(req)
+    local candidates = {}
+    if ok and raw then
+        local body = HttpService:JSONDecode(raw)
         if body and body.data then
-            for i, v in next, body.data do
-                if type(v) == "table" 
-                   and tonumber(v.playing) and tonumber(v.maxPlayers) 
-                   and v.playing < v.maxPlayers 
-                   and v.id ~= JobId 
-                   and not table.find(visitedServers, v.id) then
-                    table.insert(servers, v.id)
+            for _, v in ipairs(body.data) do
+                if  type(v) == "table"
+                and tonumber(v.playing)
+                and tonumber(v.maxPlayers)
+                and v.playing < v.maxPlayers
+                and v.id ~= jobId
+                -- Bỏ qua server đã từng hop vào
+                and not table.find(visitedServers, v.id)
+                then
+                    table.insert(candidates, v.id)
                 end
             end
         end
     end
 
-    if #servers > 0 then
-        local chosenServer = servers[math.random(1, #servers)]
-        table.insert(visitedServers, chosenServer) -- đánh dấu server đã ghé
+    if #candidates == 0 then
+        -- Nếu hết server mới thì xóa lịch sử cũ (giữ lại 20 server gần nhất)
+        debugPrint("⚠️ No new servers, clearing old history partially")
+        if #visitedServers > 20 then
+            local trimmed = {}
+            for i = #visitedServers - 19, #visitedServers do
+                table.insert(trimmed, visitedServers[i])
+            end
+            visitedServers = trimmed
+            shared.__VISITED_SERVERS = visitedServers
+        end
 
-        -- Queue script cho server tiếp theo
-        local code = [[
-            local Players = game:GetService("Players")
-            local HttpService = game:GetService("HttpService")
-            local TeleportService = game:GetService("TeleportService")
-            local PlaceId = game.PlaceId
-            local JobId = game.JobId
-            local visitedServers = ]] .. HttpService:JSONEncode(visitedServers) .. [[
-
-            local function serverHop()
-                local servers = {}
-                local success, req = pcall(function()
-                    return game:HttpGet("https://games.roblox.com/v1/games/"..PlaceId.."/servers/Public?sortOrder=Desc&limit=100&excludeFullGames=true")
-                end)
-                if success then
-                    local body = HttpService:JSONDecode(req)
-                    if body and body.data then
-                        for i,v in next, body.data do
-                            if type(v)=="table" and tonumber(v.playing) and tonumber(v.maxPlayers)
-                               and v.playing < v.maxPlayers
-                               and v.id ~= JobId
-                               and not table.find(visitedServers,v.id) then
-                                table.insert(servers,v.id)
-                            end
-                        end
+        -- Thử lại
+        ok, raw = pcall(function()
+            return game:HttpGet(
+                "https://games.roblox.com/v1/games/" .. placeId ..
+                "/servers/Public?sortOrder=Desc&limit=100&excludeFullGames=true"
+            )
+        end)
+        if ok and raw then
+            local body = HttpService:JSONDecode(raw)
+            if body and body.data then
+                for _, v in ipairs(body.data) do
+                    if  type(v) == "table"
+                    and tonumber(v.playing)
+                    and tonumber(v.maxPlayers)
+                    and v.playing < v.maxPlayers
+                    and v.id ~= jobId
+                    and not table.find(visitedServers, v.id)
+                    then
+                        table.insert(candidates, v.id)
                     end
                 end
-
-                if #servers > 0 then
-                    local chosenServer = servers[math.random(1,#servers)]
-                    table.insert(visitedServers,chosenServer)
-                    queue_on_teleport = code -- tự queue tiếp
-                    TeleportService:TeleportToPlaceInstance(PlaceId, chosenServer, Players.LocalPlayer)
-                else
-                    warn("Không còn server nào để hop.")
-                end
             end
+        end
+    end
 
-            while true do
-                serverHop()
-                wait(1)
-            end
-        ]]
-        queue_on_teleport = code
-
-        -- Teleport
-        TeleportService:TeleportToPlaceInstance(PlaceId, chosenServer, Players.LocalPlayer)
+    if #candidates > 0 then
+        local chosen = candidates[math.random(1, #candidates)]
+        table.insert(visitedServers, chosen)
+        shared.__VISITED_SERVERS = visitedServers
+        serverLabel.Text = "🚀 Hopping to new server..."
+        debugPrint("Hopping to:", chosen, "| Visited:", #visitedServers, "servers")
+        task.wait(0.5)
+        TeleportService:TeleportToPlaceInstance(placeId, chosen, player)
     else
-        warn("Không còn server nào để hop.")
+        setStatus("⚠️", "No servers available", Color3.fromRGB(220, 180, 60))
+        serverLabel.Text = "Retrying in 5s..."
+        task.wait(5)
     end
 end
 
--- Gọi server hop lần đầu
+task.wait(1.5)
 while true do
     serverHop()
-    wait(1)
+    task.wait(1)
 end
