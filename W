@@ -1,188 +1,14 @@
 -- ================================================================
--- BRAINROT FINDER v3 - Cross-Account Server Tracking via npoint.io
+-- BRAINROT FINDER v4 - Cross-Account Server Tracking via npoint.io
+-- Cải tiến: UI gọn đẹp, hop nhanh hơn, skip/không lưu server full,
+--           tự động dọn cloud khi đầy, discord embed gọn đẹp
 -- ================================================================
-
--- ================== UI ==================
-local player = game.Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
-
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "BrainrotOverlay"
-screenGui.ResetOnSpawn = false
-screenGui.Parent = playerGui
-
-local bgFrame = Instance.new("Frame")
-bgFrame.Size = UDim2.new(1, 0, 1, 0)
-bgFrame.BackgroundColor3 = Color3.fromRGB(8, 8, 12)
-bgFrame.BorderSizePixel = 0
-bgFrame.Parent = screenGui
-
-local bgGrad = Instance.new("UIGradient")
-bgGrad.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(10, 5, 20)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(3, 3, 10))
-})
-bgGrad.Rotation = 135
-bgGrad.Parent = bgFrame
-
-local card = Instance.new("Frame")
-card.Size = UDim2.new(0, 460, 0, 250)
-card.Position = UDim2.new(0.5, -230, 0.5, -125)
-card.BackgroundColor3 = Color3.fromRGB(18, 18, 28)
-card.BorderSizePixel = 0
-card.Parent = bgFrame
-Instance.new("UICorner", card).CornerRadius = UDim.new(0, 16)
-
-local cardStroke = Instance.new("UIStroke")
-cardStroke.Color = Color3.fromRGB(120, 60, 220)
-cardStroke.Thickness = 2
-cardStroke.Transparency = 0.3
-cardStroke.Parent = card
-
-local accentBar = Instance.new("Frame")
-accentBar.Size = UDim2.new(1, 0, 0, 4)
-accentBar.BackgroundColor3 = Color3.fromRGB(150, 80, 255)
-accentBar.BorderSizePixel = 0
-accentBar.Parent = card
-Instance.new("UICorner", accentBar).CornerRadius = UDim.new(0, 4)
-local ag = Instance.new("UIGradient")
-ag.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0,   Color3.fromRGB(100, 40,  255)),
-    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(200, 100, 255)),
-    ColorSequenceKeypoint.new(1,   Color3.fromRGB(255, 80,  180))
-})
-ag.Parent = accentBar
-
--- Title row
-local titleRow = Instance.new("Frame")
-titleRow.Size = UDim2.new(1, -30, 0, 38)
-titleRow.Position = UDim2.new(0, 15, 0, 16)
-titleRow.BackgroundTransparency = 1
-titleRow.Parent = card
-
-local iconLbl = Instance.new("TextLabel")
-iconLbl.Size = UDim2.new(0, 34, 1, 0)
-iconLbl.BackgroundTransparency = 1
-iconLbl.Text = "🧠"
-iconLbl.TextScaled = true
-iconLbl.Parent = titleRow
-
-local titleLbl = Instance.new("TextLabel")
-titleLbl.Size = UDim2.new(1, -44, 1, 0)
-titleLbl.Position = UDim2.new(0, 44, 0, 0)
-titleLbl.BackgroundTransparency = 1
-titleLbl.Text = "Brainrot Finder  •  Cross-Account"
-titleLbl.TextColor3 = Color3.fromRGB(220, 200, 255)
-titleLbl.Font = Enum.Font.GothamBold
-titleLbl.TextScaled = true
-titleLbl.TextXAlignment = Enum.TextXAlignment.Left
-titleLbl.Parent = titleRow
-
-local divider = Instance.new("Frame")
-divider.Size = UDim2.new(1, -30, 0, 1)
-divider.Position = UDim2.new(0, 15, 0, 62)
-divider.BackgroundColor3 = Color3.fromRGB(60, 50, 90)
-divider.BorderSizePixel = 0
-divider.Parent = card
-
--- Status
-local statusLbl = Instance.new("TextLabel")
-statusLbl.Size = UDim2.new(1, -30, 0, 34)
-statusLbl.Position = UDim2.new(0, 15, 0, 72)
-statusLbl.BackgroundTransparency = 1
-statusLbl.Text = "⏳ Khởi động..."
-statusLbl.TextColor3 = Color3.fromRGB(200, 180, 255)
-statusLbl.Font = Enum.Font.GothamSemibold
-statusLbl.TextScaled = true
-statusLbl.TextXAlignment = Enum.TextXAlignment.Left
-statusLbl.Parent = card
-
--- Sub-info
-local infoLbl = Instance.new("TextLabel")
-infoLbl.Size = UDim2.new(1, -30, 0, 24)
-infoLbl.Position = UDim2.new(0, 15, 0, 112)
-infoLbl.BackgroundTransparency = 1
-infoLbl.Text = ""
-infoLbl.TextColor3 = Color3.fromRGB(130, 120, 160)
-infoLbl.Font = Enum.Font.Gotham
-infoLbl.TextScaled = true
-infoLbl.TextXAlignment = Enum.TextXAlignment.Left
-infoLbl.Parent = card
-
--- Hop stats
-local hopLbl = Instance.new("TextLabel")
-hopLbl.Size = UDim2.new(1, -30, 0, 24)
-hopLbl.Position = UDim2.new(0, 15, 0, 142)
-hopLbl.BackgroundTransparency = 1
-hopLbl.Text = "🔁 Đã hop: 0 server  |  📋 Đã lưu: 0 server (cloud)"
-hopLbl.TextColor3 = Color3.fromRGB(130, 120, 160)
-hopLbl.Font = Enum.Font.Gotham
-hopLbl.TextScaled = true
-hopLbl.TextXAlignment = Enum.TextXAlignment.Left
-hopLbl.Parent = card
-
--- Sync status
-local syncLbl = Instance.new("TextLabel")
-syncLbl.Size = UDim2.new(1, -30, 0, 22)
-syncLbl.Position = UDim2.new(0, 15, 0, 172)
-syncLbl.BackgroundTransparency = 1
-syncLbl.Text = "☁️ Cloud sync: chưa kết nối"
-syncLbl.TextColor3 = Color3.fromRGB(100, 100, 140)
-syncLbl.Font = Enum.Font.Gotham
-syncLbl.TextScaled = true
-syncLbl.TextXAlignment = Enum.TextXAlignment.Left
-syncLbl.Parent = card
-
--- Progress bar
-local progressBg = Instance.new("Frame")
-progressBg.Size = UDim2.new(1, -30, 0, 8)
-progressBg.Position = UDim2.new(0, 15, 0, 206)
-progressBg.BackgroundColor3 = Color3.fromRGB(35, 30, 55)
-progressBg.BorderSizePixel = 0
-progressBg.Parent = card
-Instance.new("UICorner", progressBg).CornerRadius = UDim.new(0, 4)
-
-local progressBar = Instance.new("Frame")
-progressBar.Size = UDim2.new(0, 0, 1, 0)
-progressBar.BackgroundColor3 = Color3.fromRGB(150, 80, 255)
-progressBar.BorderSizePixel = 0
-progressBar.Parent = progressBg
-Instance.new("UICorner", progressBar).CornerRadius = UDim.new(0, 4)
-local pg = Instance.new("UIGradient")
-pg.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(100, 40,  255)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 80,  180))
-})
-pg.Parent = progressBar
-
--- Pulse
-task.spawn(function()
-    local t = 0
-    while true do
-        t += 0.05
-        cardStroke.Transparency = 0.3 + math.sin(t) * 0.25
-        task.wait(0.05)
-    end
-end)
-
-local function setStatus(icon, msg, col)
-    statusLbl.Text = icon .. " " .. msg
-    statusLbl.TextColor3 = col or Color3.fromRGB(200, 180, 255)
-end
-local function setProgress(p)
-    progressBar:TweenSize(UDim2.new(math.clamp(p,0,1), 0, 1, 0),
-        Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3, true)
-end
-local function setSync(msg, col)
-    syncLbl.Text = "☁️ Cloud sync: " .. msg
-    syncLbl.TextColor3 = col or Color3.fromRGB(100, 100, 140)
-end
 
 -- ================================================================
 -- GUARD
 -- ================================================================
-if shared.__BRAINROT_WEBHOOK_SENT then return end
-shared.__BRAINROT_WEBHOOK_SENT = true
+if shared.__BRAINROT_V4_ACTIVE then return end
+shared.__BRAINROT_V4_ACTIVE = true
 
 repeat task.wait() until game:IsLoaded()
 
@@ -192,69 +18,238 @@ repeat task.wait() until game:IsLoaded()
 local Players         = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local HttpService     = game:GetService("HttpService")
+local TweenService    = game:GetService("TweenService")
 local Workspace       = game:GetService("Workspace")
 
-local placeId = game.PlaceId
-local jobId   = game.JobId
+local player   = Players.LocalPlayer
+local placeId  = game.PlaceId
+local jobId    = game.JobId
 
 -- ================================================================
 -- CONFIG
 -- ================================================================
-local WEBHOOK_URL   = "https://discord.com/api/webhooks/1472498140409102462/Ijb7ppZ8IZVFbTz2mSySRr3M9487k60ysmNZ2NFm8KlozX41BunCspHfA06Je-4N1WBm"
-local PRICE_LIMIT   = 5_000_000
-local MAX_DISTANCE  = 5
-local NPOINT_BIN_ID = "2843ef326b7c0d6abe44"
+local WEBHOOK_URL    = "https://discord.com/api/webhooks/1472498140409102462/Ijb7ppZ8IZVFbTz2mSySRr3M9487k60ysmNZ2NFm8KlozX41BunCspHfA06Je-4N1WBm"
+local PRICE_LIMIT    = 5_000_000
+local MAX_DISTANCE   = 5
+local NPOINT_BIN_ID  = "2843ef326b7c0d6abe44"
+local NPOINT_BASE    = "https://api.npoint.io/"
+
+local MAX_CLOUD_SIZE = 300   -- tối đa server lưu trong cloud
+local TRIM_TO        = 150   -- khi đầy, giữ lại bao nhiêu server mới nhất
+local HOP_WAIT       = 0.4   -- giây chờ giữa các hop (giảm từ 0.8+1.5)
+local SERVER_LIMIT   = 8     -- max player của game (để check server full)
 
 -- ================================================================
--- CLOUD SERVER LIST (npoint.io)
+-- UI — Compact, clean, không lag
 -- ================================================================
-local NPOINT_BASE = "https://api.npoint.io/"
+local playerGui = player:WaitForChild("PlayerGui")
 
-local function cloudRead()
-    local ok, raw = pcall(function()
-        return game:HttpGet(NPOINT_BASE .. NPOINT_BIN_ID)
-    end)
-    if not ok or not raw then
-        setSync("lỗi đọc ❌", Color3.fromRGB(220, 80, 80))
-        return nil
+-- Xóa UI cũ nếu có
+local old = playerGui:FindFirstChild("BrainrotUI")
+if old then old:Destroy() end
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name            = "BrainrotUI"
+screenGui.ResetOnSpawn    = false
+screenGui.DisplayOrder    = 999
+screenGui.IgnoreGuiInset  = true
+screenGui.Parent          = playerGui
+
+-- Card nhỏ gọn góc trên trái
+local card = Instance.new("Frame")
+card.Name                = "Card"
+card.Size                = UDim2.new(0, 300, 0, 130)
+card.Position            = UDim2.new(0, 14, 0, 14)
+card.BackgroundColor3    = Color3.fromRGB(16, 16, 22)
+card.BorderSizePixel     = 0
+card.Parent              = screenGui
+Instance.new("UICorner", card).CornerRadius = UDim.new(0, 10)
+
+local stroke = Instance.new("UIStroke")
+stroke.Color      = Color3.fromRGB(100, 60, 180)
+stroke.Thickness  = 1.5
+stroke.Transparency = 0.4
+stroke.Parent     = card
+
+-- Top accent line
+local topBar = Instance.new("Frame")
+topBar.Size              = UDim2.new(1, 0, 0, 3)
+topBar.BackgroundColor3  = Color3.fromRGB(120, 60, 210)
+topBar.BorderSizePixel   = 0
+topBar.ZIndex            = 2
+topBar.Parent            = card
+Instance.new("UICorner", topBar).CornerRadius = UDim.new(0, 10)
+
+local tg = Instance.new("UIGradient")
+tg.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(90, 40, 200)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 70, 160))
+})
+tg.Parent = topBar
+
+-- Title
+local titleLbl = Instance.new("TextLabel")
+titleLbl.Size             = UDim2.new(1, -12, 0, 22)
+titleLbl.Position         = UDim2.new(0, 10, 0, 10)
+titleLbl.BackgroundTransparency = 1
+titleLbl.Text             = "🧠 Brainrot Finder v4"
+titleLbl.TextColor3       = Color3.fromRGB(210, 190, 255)
+titleLbl.Font             = Enum.Font.GothamBold
+titleLbl.TextSize         = 13
+titleLbl.TextXAlignment   = Enum.TextXAlignment.Left
+titleLbl.Parent           = card
+
+-- Divider
+local div = Instance.new("Frame")
+div.Size             = UDim2.new(1, -20, 0, 1)
+div.Position         = UDim2.new(0, 10, 0, 36)
+div.BackgroundColor3 = Color3.fromRGB(45, 38, 70)
+div.BorderSizePixel  = 0
+div.Parent           = card
+
+-- Status line
+local statusLbl = Instance.new("TextLabel")
+statusLbl.Size             = UDim2.new(1, -12, 0, 20)
+statusLbl.Position         = UDim2.new(0, 10, 0, 42)
+statusLbl.BackgroundTransparency = 1
+statusLbl.Text             = "⏳ Đang khởi động..."
+statusLbl.TextColor3       = Color3.fromRGB(180, 160, 240)
+statusLbl.Font             = Enum.Font.GothamSemibold
+statusLbl.TextSize         = 12
+statusLbl.TextXAlignment   = Enum.TextXAlignment.Left
+statusLbl.TextTruncate     = Enum.TextTruncate.AtEnd
+statusLbl.Parent           = card
+
+-- Info line
+local infoLbl = Instance.new("TextLabel")
+infoLbl.Size             = UDim2.new(1, -12, 0, 16)
+infoLbl.Position         = UDim2.new(0, 10, 0, 64)
+infoLbl.BackgroundTransparency = 1
+infoLbl.Text             = ""
+infoLbl.TextColor3       = Color3.fromRGB(110, 105, 145)
+infoLbl.Font             = Enum.Font.Gotham
+infoLbl.TextSize         = 11
+infoLbl.TextXAlignment   = Enum.TextXAlignment.Left
+infoLbl.TextTruncate     = Enum.TextTruncate.AtEnd
+infoLbl.Parent           = card
+
+-- Hop & cloud stat
+local statLbl = Instance.new("TextLabel")
+statLbl.Size             = UDim2.new(1, -12, 0, 16)
+statLbl.Position         = UDim2.new(0, 10, 0, 82)
+statLbl.BackgroundTransparency = 1
+statLbl.Text             = "🔁 Hop: 0   ☁️ Cloud: 0"
+statLbl.TextColor3       = Color3.fromRGB(100, 98, 140)
+statLbl.Font             = Enum.Font.Gotham
+statLbl.TextSize         = 11
+statLbl.TextXAlignment   = Enum.TextXAlignment.Left
+statLbl.Parent           = card
+
+-- Progress bar (mỏng, gọn)
+local pBg = Instance.new("Frame")
+pBg.Size             = UDim2.new(1, -20, 0, 4)
+pBg.Position         = UDim2.new(0, 10, 0, 114)
+pBg.BackgroundColor3 = Color3.fromRGB(30, 26, 46)
+pBg.BorderSizePixel  = 0
+pBg.Parent           = card
+Instance.new("UICorner", pBg).CornerRadius = UDim.new(1, 0)
+
+local pBar = Instance.new("Frame")
+pBar.Size             = UDim2.new(0, 0, 1, 0)
+pBar.BackgroundColor3 = Color3.fromRGB(120, 60, 210)
+pBar.BorderSizePixel  = 0
+pBar.Parent           = pBg
+Instance.new("UICorner", pBar).CornerRadius = UDim.new(1, 0)
+
+local pbg2 = Instance.new("UIGradient")
+pbg2.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(90, 40, 200)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 70, 160))
+})
+pbg2.Parent = pBar
+
+-- Pulse nhẹ — chỉ 1 coroutine đơn giản, không lag
+task.spawn(function()
+    local t = 0
+    while card and card.Parent do
+        t += 0.06
+        stroke.Transparency = 0.35 + math.sin(t) * 0.2
+        task.wait(0.08) -- 12fps thay vì 20fps → tiết kiệm hơn
     end
-    local ok2, data = pcall(function() return HttpService:JSONDecode(raw) end)
+end)
+
+-- Helper UI
+local function setStatus(icon, msg, col)
+    statusLbl.Text      = icon .. " " .. msg
+    statusLbl.TextColor3 = col or Color3.fromRGB(180, 160, 240)
+end
+
+local function setInfo(msg)
+    infoLbl.Text = msg
+end
+
+local function setProgress(p)
+    local tw = TweenService:Create(pBar,
+        TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        { Size = UDim2.new(math.clamp(p, 0, 1), 0, 1, 0) }
+    )
+    tw:Play()
+end
+
+local hopCount   = 0
+local cloudCount = 0
+
+local function updateStat()
+    statLbl.Text = string.format("🔁 Hop: %d   ☁️ Cloud: %d", hopCount, cloudCount)
+end
+
+-- ================================================================
+-- CLOUD I/O
+-- ================================================================
+local function cloudRead()
+    local ok, raw = pcall(game.HttpGet, game, NPOINT_BASE .. NPOINT_BIN_ID)
+    if not ok or not raw then return nil end
+    local ok2, data = pcall(HttpService.JSONDecode, HttpService, raw)
     if ok2 and data and data.visited then
-        setSync("đã đồng bộ ✅ (" .. #data.visited .. " server)", Color3.fromRGB(80, 200, 120))
+        cloudCount = #data.visited
+        updateStat()
         return data.visited
     end
-    setSync("lỗi parse ❌", Color3.fromRGB(220, 80, 80))
     return nil
 end
 
-local function cloudWrite(visitedList)
-    local body = HttpService:JSONEncode({ visited = visitedList })
-    local req  = (syn and syn.request) or http_request or (http and http.request) or request
-    if not req then
-        setSync("không có http request ⚠️", Color3.fromRGB(220, 160, 60))
-        return false
+local function cloudWrite(list)
+    -- Tự động dọn khi vượt giới hạn
+    if #list > MAX_CLOUD_SIZE then
+        local trimmed = {}
+        for i = #list - TRIM_TO + 1, #list do
+            table.insert(trimmed, list[i])
+        end
+        list = trimmed
+        setInfo("♻️ Cloud đầy → đã tự dọn, giữ " .. #list .. " server")
     end
+
+    local body = HttpService:JSONEncode({ visited = list })
+    local req  = (syn and syn.request) or http_request or (http and http.request) or request
+    if not req then return false, list end
+
     local ok = pcall(function()
         req({
             Url     = NPOINT_BASE .. NPOINT_BIN_ID,
             Method  = "POST",
             Headers = { ["Content-Type"] = "application/json" },
-            Body    = body
+            Body    = body,
         })
     end)
-    if ok then
-        setSync("đã lưu ✅ (" .. #visitedList .. " server)", Color3.fromRGB(80, 200, 120))
-    else
-        setSync("lỗi ghi ❌", Color3.fromRGB(220, 80, 80))
-    end
-    return ok
+
+    cloudCount = #list
+    updateStat()
+    return ok, list
 end
 
 -- ================================================================
 -- SCAN
 -- ================================================================
-local function debugPrint(...) print("[BRAINROT]", ...) end
-
 local function parseGeneration(text)
     if not text then return 0 end
     local num = tonumber(text:match("[%d%.]+")) or 0
@@ -266,7 +261,8 @@ end
 local function getInstanceWorldPos(inst)
     if inst:IsA("BasePart") then return inst.Position end
     if inst:IsA("Model") then
-        return inst.PrimaryPart and inst.PrimaryPart.Position or inst:GetPivot().Position
+        return inst.PrimaryPart and inst.PrimaryPart.Position
+            or inst:GetPivot().Position
     end
 end
 
@@ -279,18 +275,15 @@ local function getBaseNameFromPlot(plot)
 end
 
 local function collectBrainrot()
-    local found   = {}
-    local plots   = Workspace:FindFirstChild("Plots")
-    local debris  = Workspace:FindFirstChild("Debris")
-    if not plots or not debris then
-        debugPrint("❌ Missing Plots/Debris")
-        return found
-    end
+    local found  = {}
+    local plots  = Workspace:FindFirstChild("Plots")
+    local debris = Workspace:FindFirstChild("Debris")
+    if not plots or not debris then return found end
 
     local plotList = plots:GetChildren()
     for idx, plot in ipairs(plotList) do
         setProgress(idx / #plotList)
-        infoLbl.Text = "🔍 Đang scan plot " .. idx .. "/" .. #plotList
+        setInfo(string.format("🔍 Scan %d/%d plots", idx, #plotList))
 
         local baseName = getBaseNameFromPlot(plot)
         local podiums  = plot:FindFirstChild("AnimalPodiums")
@@ -306,12 +299,12 @@ local function collectBrainrot()
             local nearest, nearestDist
 
             for _, d in ipairs(debris:GetChildren()) do
-                local oh = d:FindFirstChild("AnimalOverhead")
+                local oh   = d:FindFirstChild("AnimalOverhead")
                 if not oh then continue end
                 local nLbl = oh:FindFirstChild("DisplayName")
                 local gLbl = oh:FindFirstChild("Generation")
                 if not nLbl or not gLbl then continue end
-                local pos = getInstanceWorldPos(d)
+                local pos  = getInstanceWorldPos(d)
                 if not pos then continue end
                 local dist = (pos - attPos).Magnitude
                 if dist <= MAX_DISTANCE and (not nearestDist or dist < nearestDist) then
@@ -320,7 +313,7 @@ local function collectBrainrot()
                         name     = nLbl.Text,
                         genText  = gLbl.Text,
                         genValue = parseGeneration(gLbl.Text),
-                        baseName = baseName
+                        baseName = baseName,
                     }
                 end
             end
@@ -335,40 +328,46 @@ local function collectBrainrot()
 end
 
 -- ================================================================
--- WEBHOOK
+-- WEBHOOK — Compact, clean Discord embed
 -- ================================================================
 local function sendWebhook(loot)
     if #loot == 0 then return end
 
-    local serverLink = ("https://kebabman.vercel.app/start?placeId=%s&gameInstanceId=%s")
+    local link = ("https://kebabman.vercel.app/start?placeId=%s&gameInstanceId=%s")
         :format(placeId, tostring(jobId))
 
-    local lootLines = {}
+    -- Gộp loot vào 1 field gọn
+    local lines = {}
     for _, item in ipairs(loot) do
-        table.insert(lootLines,
-            string.format("🐾 **%s** `%s`\n└ 🏠 %s", item.name, item.genText, item.baseName))
+        table.insert(lines, string.format("`%s` %s — %s", item.genText, item.name, item.baseName))
     end
 
-    local playerLines = {}
-    for _, p in ipairs(Players:GetPlayers()) do
-        table.insert(playerLines, "• " .. p.Name)
-    end
+    local playerCount = #Players:GetPlayers()
 
     local payload = {
         content = "@everyone",
-        embeds = {{
-            title       = "🧠 Brainrot Detected!",
+        embeds  = {{
+            title       = string.format("🧠 %d Brainrot Found!", #loot),
+            url         = link,
             description = string.format(
-                "**%d** valuable brainrot found!\n[🚀 Join Server](%s)", #loot, serverLink),
-            color  = 10027263,
+                "**[🚀 Join Server](%s)**\n```\n%s\n```",
+                link, table.concat(lines, "\n")
+            ),
+            color  = 0x7C3AED,
             fields = {
-                { name = "💰 Loot (" .. #loot .. ")",  value = table.concat(lootLines, "\n\n"), inline = false },
-                { name = "👥 Players",                 value = #playerLines > 0 and table.concat(playerLines, "\n") or "N/A", inline = true },
-                { name = "📊 Capacity",                value = #Players:GetPlayers() .. " / 8", inline = true },
-                { name = "🌐 Place ID",                value = tostring(placeId), inline = true }
+                {
+                    name   = "Server",
+                    value  = string.format("👥 `%d/%d`  •  🌐 `%s`", playerCount, SERVER_LIMIT, tostring(placeId)),
+                    inline = false,
+                },
+                {
+                    name   = "Job ID",
+                    value  = "`" .. tostring(jobId):sub(1, 22) .. "...`",
+                    inline = false,
+                },
             },
-            footer    = { text = "Brainrot Finder  •  Job: " .. tostring(jobId):sub(1, 18) .. "..." },
-            timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
+            footer    = { text = "Brainrot Finder v4" },
+            timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ"),
         }}
     }
 
@@ -379,79 +378,83 @@ local function sendWebhook(loot)
                 Url     = WEBHOOK_URL,
                 Method  = "POST",
                 Headers = { ["Content-Type"] = "application/json" },
-                Body    = HttpService:JSONEncode(payload)
+                Body    = HttpService:JSONEncode(payload),
             })
         end)
     end
 end
 
 -- ================================================================
--- SCAN & WEBHOOK
+-- CHECK: Server có full không?
 -- ================================================================
-setStatus("⏳", "Đang scan...", Color3.fromRGB(200, 180, 255))
+local function isCurrentServerFull()
+    return #Players:GetPlayers() >= SERVER_LIMIT
+end
+
+local function isServerFull(serverData)
+    return (tonumber(serverData.playing) or 0) >= (tonumber(serverData.maxPlayers) or SERVER_LIMIT)
+end
+
+-- ================================================================
+-- SCAN & WEBHOOK (run once on join)
+-- ================================================================
+setStatus("⏳", "Đang scan...", Color3.fromRGB(180, 160, 240))
 setProgress(0)
 
-local loot = collectBrainrot()
-setProgress(1)
-
-if #loot == 0 then
-    setStatus("😞", "Không thấy brainrot", Color3.fromRGB(180, 100, 100))
-    cardStroke.Color = Color3.fromRGB(180, 60, 60)
+-- Nếu server hiện tại full → không lưu, hop ngay
+if isCurrentServerFull() then
+    setStatus("⚡", "Server full → bỏ qua, hop ngay", Color3.fromRGB(220, 160, 60))
+    setInfo("Server đầy, không lưu cloud")
 else
-    setStatus("✅", "Webhook đã gửi! (" .. #loot .. " found)", Color3.fromRGB(100, 220, 140))
-    cardStroke.Color = Color3.fromRGB(80, 220, 120)
-    progressBar.BackgroundColor3 = Color3.fromRGB(80, 200, 120)
-    sendWebhook(loot)
+    local loot = collectBrainrot()
+    setProgress(1)
+
+    if #loot == 0 then
+        setStatus("😞", "Không thấy brainrot", Color3.fromRGB(180, 100, 100))
+        stroke.Color = Color3.fromRGB(160, 50, 50)
+    else
+        setStatus("✅", string.format("Webhook gửi! (%d found)", #loot), Color3.fromRGB(80, 210, 130))
+        stroke.Color = Color3.fromRGB(60, 190, 100)
+        pBar.BackgroundColor3 = Color3.fromRGB(60, 190, 100)
+        sendWebhook(loot)
+    end
 end
 
 -- ================================================================
--- SERVER HOP — dùng cloud list chung cho 2 tài khoản
+-- SERVER HOP — Nhanh, thông minh, đồng bộ cloud
 -- ================================================================
-local hopCount = 0
-
-local function updateHopUI(cloudSize)
-    hopLbl.Text = string.format(
-        "🔁 Đã hop: %d server  |  📋 Đã lưu: %d server (cloud)",
-        hopCount, cloudSize or 0
-    )
-end
-
 local function serverHop()
     hopCount += 1
-    setStatus("🔁", "Server hopping... (#" .. hopCount .. ")", Color3.fromRGB(150, 150, 220))
-    infoLbl.Text = "☁️ Đang đọc danh sách từ cloud..."
+    setStatus("🔁", string.format("Hopping #%d...", hopCount), Color3.fromRGB(140, 140, 220))
+    setInfo("☁️ Đọc cloud...")
 
-    -- Đọc danh sách server đã hop từ cloud (chung 2 tài khoản)
+    -- Đọc danh sách đã hop từ cloud
     local visitedList = cloudRead() or {}
 
-    -- Thêm server hiện tại nếu chưa có
-    if not table.find(visitedList, jobId) then
+    -- Nếu server hiện tại KHÔNG full → thêm vào cloud
+    if not isCurrentServerFull() and not table.find(visitedList, jobId) then
         table.insert(visitedList, jobId)
+    else
+        setInfo("⚠️ Server hiện tại full → không lưu cloud")
     end
 
-    updateHopUI(#visitedList)
-    infoLbl.Text = "🌐 Đang lấy danh sách server..."
+    setInfo("🌐 Lấy server list...")
 
-    -- Lấy server list từ Roblox (2 lần sort để có nhiều server hơn)
+    -- Lấy candidates từ Roblox (cả Asc lẫn Desc để có nhiều server)
     local candidates = {}
-    for _, sortOrder in ipairs({"Asc", "Desc"}) do
-        local ok, raw = pcall(function()
-            return game:HttpGet(
-                "https://games.roblox.com/v1/games/" .. placeId ..
-                "/servers/Public?sortOrder=" .. sortOrder ..
-                "&limit=100&excludeFullGames=true"
-            )
-        end)
+    for _, sort in ipairs({ "Asc", "Desc" }) do
+        local ok, raw = pcall(game.HttpGet, game,
+            "https://games.roblox.com/v1/games/" .. placeId ..
+            "/servers/Public?sortOrder=" .. sort .. "&limit=100&excludeFullGames=true"
+        )
         if ok and raw then
-            local ok2, body = pcall(function() return HttpService:JSONDecode(raw) end)
+            local ok2, body = pcall(HttpService.JSONDecode, HttpService, raw)
             if ok2 and body and body.data then
                 for _, v in ipairs(body.data) do
                     if  type(v) == "table"
-                    and tonumber(v.playing)
-                    and tonumber(v.maxPlayers)
-                    and v.playing < v.maxPlayers
+                    and v.id
                     and v.id ~= jobId
-                    -- Lọc toàn bộ server mà cả 2 tài khoản đã từng hop
+                    and not isServerFull(v)               -- double-check không full
                     and not table.find(visitedList, v.id)
                     and not table.find(candidates, v.id)
                     then
@@ -462,14 +465,14 @@ local function serverHop()
         end
     end
 
+    -- Hết server mới → trim cloud rồi thử lại
     if #candidates == 0 then
-        -- Hết server mới → giữ 10 cái gần nhất rồi thử lại
-        setSync("hết server mới, reset lịch sử cũ...", Color3.fromRGB(220, 160, 60))
-        infoLbl.Text = "⚠️ Hết server mới, reset bộ nhớ cũ..."
+        setStatus("♻️", "Hết server mới, reset...", Color3.fromRGB(220, 160, 60))
+        setInfo("Giữ lại " .. TRIM_TO .. " server gần nhất")
 
-        if #visitedList > 10 then
+        if #visitedList > TRIM_TO then
             local trimmed = {}
-            for i = #visitedList - 9, #visitedList do
+            for i = #visitedList - TRIM_TO + 1, #visitedList do
                 table.insert(trimmed, visitedList[i])
             end
             visitedList = trimmed
@@ -478,42 +481,34 @@ local function serverHop()
         end
 
         cloudWrite(visitedList)
-        task.wait(5)
+        task.wait(4)
         return
     end
 
-    -- Chọn server ngẫu nhiên trong danh sách chưa từng hop
+    -- Chọn server ngẫu nhiên từ candidates
     local chosen = candidates[math.random(1, #candidates)]
 
-    -- Ghi server sắp hop vào cloud TRƯỚC KHI teleport
+    -- Ghi cloud TRƯỚC khi teleport
     table.insert(visitedList, chosen)
+    local _, newList = cloudWrite(visitedList)
+    visitedList = newList
 
-    -- Giới hạn tối đa 500 server trong cloud
-    if #visitedList > 500 then
-        local trimmed = {}
-        for i = #visitedList - 499, #visitedList do
-            table.insert(trimmed, visitedList[i])
-        end
-        visitedList = trimmed
-    end
+    setInfo(string.format("🚀 Hop → server mới  (%d ứng viên)", #candidates))
+    updateStat()
 
-    cloudWrite(visitedList)
-    updateHopUI(#visitedList)
-
-    infoLbl.Text = string.format("🚀 Đang hop → server mới (%d candidates)", #candidates)
-    debugPrint("Hopping to:", chosen, "| Candidates:", #candidates, "| Cloud list:", #visitedList)
-    task.wait(0.8)
-
+    task.wait(HOP_WAIT)
     TeleportService:TeleportToPlaceInstance(placeId, chosen, player)
 end
 
--- Main hop loop
-task.wait(1.5)
+-- ================================================================
+-- MAIN LOOP
+-- ================================================================
+task.wait(1)
 while true do
     local ok, err = pcall(serverHop)
     if not ok then
-        setStatus("⚠️", "Lỗi: " .. tostring(err), Color3.fromRGB(220, 160, 60))
+        setStatus("⚠️", "Lỗi: " .. tostring(err):sub(1, 40), Color3.fromRGB(220, 160, 60))
         task.wait(3)
     end
-    task.wait(1)
+    task.wait(0.5)
 end
